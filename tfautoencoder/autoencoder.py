@@ -83,19 +83,19 @@ def getModel(X, inp_size, num_classes=3, nh=[200, 50], lr=0.01, vae_batch=256):
     mdl.target = target
     
     listenc = []
-    mdl.encoder_op_mean = getNet(target, mdl.classification_space_size, mdl.num_hidden, listenc, af=tf.nn.sigmoid)
+    mdl.encoder_op = getNet(target, mdl.classification_space_size, mdl.num_hidden, listenc, af=tf.nn.sigmoid)
     
-    mdl.enc_smpl = mdl.encoder_op_mean
+    mdl.enc_smpl = mdl.encoder_op
     
     listdec = []
-    mdl.decoder_op = (getNet(mdl.encoder_op_mean-0.5, mdl.num_hidden[-1], mdl.num_hidden_dec, listdec, af=tf.nn.sigmoid))
+    mdl.decoder_op = (getNet(mdl.encoder_op-0.5, mdl.num_hidden[-1], mdl.num_hidden_dec, listdec, af=tf.nn.sigmoid))
     
     inputs = mdl.target
     restored = mdl.decoder_op
     
     # Define loss and optimizer, minimize the squared error
 
-    mdl.latent_loss = tf.reduce_mean(-tf.log(tf.reduce_max(mdl.encoder_op_mean,0)-tf.reduce_min(mdl.encoder_op_mean,0)+0.0000001))
+    mdl.latent_loss = tf.reduce_mean(-tf.log(tf.reduce_max(mdl.encoder_op,0)-tf.reduce_min(mdl.encoder_op,0)+0.0000001))
 
     reg_lossesencdec = 0
     for w in listenc:
