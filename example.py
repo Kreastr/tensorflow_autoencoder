@@ -1,4 +1,8 @@
+import tensorflow as tf
 from tfautoencoder.autoencoder import getModel, getScaler
+import numpy as np
+
+avgvec = np.random.normal(0,1,(1000,200))
 
 input_dimensionality = 200
 
@@ -54,4 +58,5 @@ with tf.Session() as sess:
 
 	# Produce embedded vectors
 	embedded = sess.run(encoder_op, feed_dict={X: avgvec})
+
 

@@ -56,7 +56,7 @@ def getScalerNoHinge(x):
        tf.reduce_max(0.00001 + x)
      )
 
-def getModel(X, Y, noiseLevel, minsc, maxsc, inp_size, num_classes=3, windowsize=20, nh=[200, 50], lr=0.01, vae_batch=256):
+def getModel(X, inp_size, num_classes=3, windowsize=20, nh=[200, 50], lr=0.01, vae_batch=256):
     mdl = TfModel()
     mdl.classification_space_size = inp_size
     mdl.learning_rate = lr
@@ -79,68 +79,35 @@ def getModel(X, Y, noiseLevel, minsc, maxsc, inp_size, num_classes=3, windowsize
         return input
 
     # Construct model
-    noisedX = X+noiseLevel*tf.random_normal(tf.shape(X), 0, 1, dtype=tf.float32)
-
-    tmp = tf.reduce_mean(tf.reshape(noisedX, [-1, windowsize, int(mdl.classification_space_size / windowsize)]), 1)
-    mdl.input_avg = tmp
-    mdl.input_avgs = tf.tile(tmp, [1, windowsize])
-    mdl.input_deltas = tf.concat([noisedX - mdl.input_avgs,tmp], 1)
-    target = tf.divide((mdl.input_deltas - minsc),
-                       0.0000001 + maxsc - minsc)
+    target = X
     mdl.target = target
-    #target = tf.divide((mdl.input_avg-tf.reduce_min(mdl.input_avg, 0)),0.00000001+(tf.reduce_max(mdl.input_avg, 0)-tf.reduce_min(mdl.input_avg, 0)))
+    
     listenc = []
     mdl.encoder_op_mean = getNet(target, mdl.classification_space_size + int(mdl.classification_space_size/windowsize), mdl.num_hidden, listenc, af=tf.nn.sigmoid)
-    #mdl.encoder_op_var = ( getNet(X-0.5, mdl.classification_space_size, mdl.num_hidden, af=tf.nn.sigmoid))
-    #samples = tf.random_normal([vae_batch, mdl.num_hidden[-1]], 0, 0.3, dtype=tf.float32)
-
-    #target_2 = tf.divide((mdl.encoder_op_mean- tf.reduce_min(mdl.encoder_op_mean, 0)),
-                       #0.00000001 + (tf.reduce_max(mdl.encoder_op_mean, 0) - tf.reduce_min(mdl.encoder_op_mean, 0)))
-    mdl.enc_smpl = mdl.encoder_op_mean#target_2-0.5#mdl.input_avg#tf.concat([mdl.encoder_op_mean, mdl.input_avg], 1)#mdl.encoder_op_mean #+ mdl.encoder_op_var*samples
+    
+    mdl.enc_smpl = mdl.encoder_op_mean
+    
     listdec = []
     mdl.decoder_op = (getNet(mdl.encoder_op_mean-0.5, mdl.num_hidden[-1], mdl.num_hidden_dec, listdec, af=tf.nn.sigmoid))
-    #mdl.num_hidden[-1]++int(mdl.classification_space_size / 20)
-    listclass = []
-    mdl.classifier_op = (getNet(mdl.enc_smpl, mdl.num_hidden[-1] , [num_classes], listclass, af=tf.nn.sigmoid))
-
-    mdl.ohY = tf.one_hot(Y, num_classes)
-    #tf.reduce_mean(tf.pow(mdl.classifier_op - mdl.ohY, 2))#
-    # Prediction
-    y_pred = mdl.decoder_op
-    # Targets (Labels) are the input data.
-
-
-
-    mdl.delta_avg = tf.reduce_mean(tf.abs(mdl.input_deltas))
-    y_true = mdl.input_deltas
-
+    
+    inputs = mdl.target
+    restored = mdl.decoder_op
+    
     # Define loss and optimizer, minimize the squared error
 
-    #mdl.compression_error_avg = tf.reduce_mean(tf.reshape(y_true - y_pred, [-1, 20, int(mdl.classification_space_size/20)]), 1)
-    #z_mean = mdl.encoder_op_mean
-    #z_stddev = mdl.encoder_op_var
     mdl.latent_loss = tf.reduce_mean(-tf.log(tf.reduce_max(mdl.encoder_op_mean,0)-tf.reduce_min(mdl.encoder_op_mean,0)+0.0000001))
 
     reg_lossesencdec = 0
-    reg_lossesencclass = 0
     for w in listenc:
         reg_lossesencdec += tf.nn.l2_loss(w)
-        reg_lossesencclass += tf.nn.l2_loss(w)
+        
     for w in listdec:
         reg_lossesencdec += tf.nn.l2_loss(w)
-    for w in listclass:
-        reg_lossesencclass += tf.nn.l2_loss(w)
 
     reg_constant = 0.000001  # Choose an appropriate one.
     mdl.reglossencdec = tf.constant(0.0)#reg_constant*tf.reduce_mean(reg_lossesencdec)
-    mdl.reglossencclass= tf.constant(0.0)#reg_constant * tf.reduce_mean(reg_lossesencclass)
 
-    mdl.class_loss = mdl.latent_loss+tf.reduce_mean(
-        tf.nn.softmax_cross_entropy_with_logits_v2(logits=mdl.classifier_op, labels=mdl.ohY))+ mdl.reglossencclass
-    mdl.class_opt = tf.train.RMSPropOptimizer(0.0001 * mdl.learning_rate, momentum=0.99, decay=0.9).minimize(
-        mdl.class_loss)
-
-    mdl.loss = tf.reduce_mean(tf.pow(y_true - y_pred, 2))+mdl.latent_loss+ mdl.reglossencdec
+    mdl.loss = tf.reduce_mean(tf.pow(inputs - restored, 2))+mdl.latent_loss+ mdl.reglossencdec
     mdl.optimizer = tf.train.RMSPropOptimizer(mdl.learning_rate, momentum=0.9, decay=0.99).minimize(mdl.loss)
     mdl.auc = tf.metrics.auc(mdl.ohY, mdl.classifier_op)
     mdl.acc = tf.metrics.accuracy(Y, tf.argmax(mdl.classifier_op, 1))
