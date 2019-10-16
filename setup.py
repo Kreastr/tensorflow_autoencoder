@@ -1,9 +1,9 @@
 from setuptools import setup
 
-install_requires = [ 'tensorflow==1.14.0']
+install_requires = [ 'tensorflow==2']
 
 setup(name='tfautoencoder',
-    version='0.1.3',
+    version='0.1.4',
     author='Aleksei Romanenko',
     author_email='aleksei.romanenko@pm.me',
     platform='noarch',
