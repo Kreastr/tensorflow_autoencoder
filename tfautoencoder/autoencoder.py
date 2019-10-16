@@ -56,14 +56,14 @@ def getScalerNoHinge(x):
        tf.reduce_max(0.00001 + x)
      )
 
-def getModel(X, inp_size, num_classes=3, windowsize=20, nh=[200, 50], lr=0.01, vae_batch=256):
+def getModel(X, inp_size, num_classes=3, nh=[200, 50], lr=0.01, vae_batch=256):
     mdl = TfModel()
     mdl.classification_space_size = inp_size
     mdl.learning_rate = lr
     # Network Parameters
     mdl.num_hidden = nh # 1st layer num features
     mdl.num_hidden_dec = mdl.num_hidden[-2::-1] # 1st layer num features
-    mdl.num_hidden_dec.append(mdl.classification_space_size  + int(mdl.classification_space_size/windowsize))
+    mdl.num_hidden_dec.append(mdl.classification_space_size)
 
     num_input = mdl.classification_space_size # MNIST data input (img shape: 28*28)
 
@@ -83,7 +83,7 @@ def getModel(X, inp_size, num_classes=3, windowsize=20, nh=[200, 50], lr=0.01, v
     mdl.target = target
     
     listenc = []
-    mdl.encoder_op_mean = getNet(target, mdl.classification_space_size + int(mdl.classification_space_size/windowsize), mdl.num_hidden, listenc, af=tf.nn.sigmoid)
+    mdl.encoder_op_mean = getNet(target, mdl.classification_space_size, mdl.num_hidden, listenc, af=tf.nn.sigmoid)
     
     mdl.enc_smpl = mdl.encoder_op_mean
     
