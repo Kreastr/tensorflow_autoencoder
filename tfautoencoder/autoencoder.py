@@ -17,27 +17,11 @@
 #    along with Tensorflow Autoencoder.  If not, see <https://www.gnu.org/licenses/>.
 
 #from transliterate import translit, get_available_language_codes
-import numpy as np
-import xml.etree.ElementTree
-from random import shuffle
-import random
-import jsonpickle
-import json
-from sklearn.neural_network import MLPClassifier
-from sklearn.svm import LinearSVC
-from sklearn.svm import SVC
 
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import accuracy_score
 import tensorflow as tf
-from sklearn.svm import NuSVC
-from sklearn import linear_model
-
 
 class TfModel: pass
 from multiprocessing import Process, Queue
-
-num_classes = 3
 
 def getLayer(x, numIn, numOut, weights_list, actfun=tf.nn.sigmoid):
 
@@ -72,7 +56,7 @@ def getScalerNoHinge(x_target, x):
        tf.reduce_max(0.00001 +x_target)
      )
 
-def getModel(X, Y, noiseLevel, minsc, maxsc, inp_size, windowsize=20, nh=[200, 50], lr=0.01, vae_batch=256):
+def getModel(X, Y, noiseLevel, minsc, maxsc, inp_size, num_classes=3, windowsize=20, nh=[200, 50], lr=0.01, vae_batch=256):
     mdl = TfModel()
     mdl.classification_space_size = inp_size
     mdl.learning_rate = lr
