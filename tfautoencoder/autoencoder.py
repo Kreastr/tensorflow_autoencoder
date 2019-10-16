@@ -34,10 +34,10 @@ def getLayer(x, numIn, numOut, weights_list, actfun=tf.nn.sigmoid):
     layer.my_parent = x
     return layer
 
-def getScaler(x_target, x):
+def getScaler( x):
     return tf.div(
        0.00001 + x,
-       tf.reduce_max(0.00001 +x_target)
+       tf.reduce_max(0.00001 + x)
      )
 
 def getMinMax(x, inp_size, window=20):
@@ -50,10 +50,10 @@ def getMinMax(x, inp_size, window=20):
     mdl.max_deltas = tf.reduce_max(mdl.input_deltas, 0)
     return mdl
 
-def getScalerNoHinge(x_target, x):
+def getScalerNoHinge(x):
     return tf.div(
        x,
-       tf.reduce_max(0.00001 +x_target)
+       tf.reduce_max(0.00001 + x)
      )
 
 def getModel(X, Y, noiseLevel, minsc, maxsc, inp_size, num_classes=3, windowsize=20, nh=[200, 50], lr=0.01, vae_batch=256):
