@@ -17,6 +17,6 @@ setup(name='tfautoencoder',
         'Programming Language :: Python :: 3',
     ],
     url='https://github.com/Kreastr/tensorflow_autoencoder',
-    py_modules=['src/__init__'],
+    packages=['tfautoencoder'],
     install_requires=install_requires
     )
