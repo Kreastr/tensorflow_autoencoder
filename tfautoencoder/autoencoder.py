@@ -109,8 +109,6 @@ def getModel(X, inp_size, num_classes=3, nh=[200, 50], lr=0.01, vae_batch=256):
 
     mdl.loss = tf.reduce_mean(tf.pow(inputs - restored, 2))+mdl.latent_loss+ mdl.reglossencdec
     mdl.optimizer = tf.train.RMSPropOptimizer(mdl.learning_rate, momentum=0.9, decay=0.99).minimize(mdl.loss)
-    mdl.auc = tf.metrics.auc(mdl.ohY, mdl.classifier_op)
-    mdl.acc = tf.metrics.accuracy(Y, tf.argmax(mdl.classifier_op, 1))
     return mdl
 
 
