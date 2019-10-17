@@ -56,7 +56,7 @@ def getScalerNoHinge(x):
        tf.reduce_max(0.00001 + x)
      )
 
-def getModel(X, inp_size, num_classes=3, nh=[200, 50], lr=0.01, vae_batch=256):
+def getModel(X, inp_size, num_classes=3, nh=[200, 50], lr=0.01, vae_batch=256, regularizatoin_loss_rate = 0.0, latent_loss_rate=0.0):
     mdl = TfModel()
     mdl.classification_space_size = inp_size
     mdl.learning_rate = lr
@@ -95,7 +95,12 @@ def getModel(X, inp_size, num_classes=3, nh=[200, 50], lr=0.01, vae_batch=256):
     
     # Define loss and optimizer, minimize the squared error
 
-    mdl.latent_loss = tf.reduce_mean(-tf.log(tf.reduce_max(mdl.encoder_op,0)-tf.reduce_min(mdl.encoder_op,0)+0.0000001))
+    
+    if latent_loss_rate > 0:
+        mdl.latent_loss = latent_loss_rate*tf.reduce_mean(-tf.log(tf.reduce_max(mdl.encoder_op,0)-tf.reduce_min(mdl.encoder_op,0)+0.0000001))
+    else:
+        mdl.latent_loss = tf.constant(0.0)
+    
 
     reg_lossesencdec = 0
     for w in listenc:
@@ -104,8 +109,10 @@ def getModel(X, inp_size, num_classes=3, nh=[200, 50], lr=0.01, vae_batch=256):
     for w in listdec:
         reg_lossesencdec += tf.nn.l2_loss(w)
 
-    reg_constant = 0.000001  # Choose an appropriate one.
-    mdl.reglossencdec = tf.constant(0.0)#reg_constant*tf.reduce_mean(reg_lossesencdec)
+    if regularizatoin_loss_rate > 0:
+        mdl.reglossencdec = regularizatoin_loss_rate*tf.reduce_mean(reg_lossesencdec)
+    else:
+        mdl.reglossencdec = tf.constant(0.0)
 
     mdl.loss = tf.reduce_mean(tf.pow(inputs - restored, 2))+mdl.latent_loss+ mdl.reglossencdec
     mdl.optimizer = tf.train.RMSPropOptimizer(mdl.learning_rate, momentum=0.9, decay=0.99).minimize(mdl.loss)
