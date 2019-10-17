@@ -56,7 +56,14 @@ def getScalerNoHinge(x):
        tf.reduce_max(0.00001 + x)
      )
 
-def getModel(X, inp_size, num_classes=3, nh=[200, 50], lr=0.01, vae_batch=256, regularizatoin_loss_rate = 0.0, latent_loss_rate=0.0):
+def getModel(X, 
+             inp_size, 
+             nh=[200, 50], 
+             lr=0.01, 
+             regularizatoin_loss_rate = 0.0, 
+             latent_loss_rate=0.0,
+             momentum=0.9,
+             decay=0.99):
     mdl = TfModel()
     mdl.classification_space_size = inp_size
     mdl.learning_rate = lr
@@ -115,7 +122,7 @@ def getModel(X, inp_size, num_classes=3, nh=[200, 50], lr=0.01, vae_batch=256, r
         mdl.reglossencdec = tf.constant(0.0)
 
     mdl.loss = tf.reduce_mean(tf.pow(inputs - restored, 2))+mdl.latent_loss+ mdl.reglossencdec
-    mdl.optimizer = tf.train.RMSPropOptimizer(mdl.learning_rate, momentum=0.9, decay=0.99).minimize(mdl.loss)
+    mdl.optimizer = tf.train.RMSPropOptimizer(mdl.learning_rate, momentum=momentum, decay=decay).minimize(mdl.loss)
     return mdl
 
 
