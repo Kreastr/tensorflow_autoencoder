@@ -23,12 +23,12 @@ import tensorflow as tf
 class TfModel: pass
 from multiprocessing import Process, Queue
 
-def getLayer(x, numIn, numOut, weights_list, actfun=tf.nn.sigmoid):
+def getLayer(x, numIn, numOut, weights_list, actfun=tf.nn.sigmoid, name=None):
 
     h = tf.Variable(tf.random_normal([numIn, numOut]))
     b = tf.Variable(tf.random_normal([numOut]))
     weights_list.append(h)
-    layer = actfun(tf.add(tf.matmul(x, h), b))
+    layer = actfun(tf.add(tf.matmul(x, h), b), name=name)
     layer.my_h = h
     layer.my_b = b
     layer.my_parent = x
@@ -67,13 +67,13 @@ def getModel(X, inp_size, num_classes=3, nh=[200, 50], lr=0.01, vae_batch=256):
 
     num_input = mdl.classification_space_size # MNIST data input (img shape: 28*28)
 
-    def getNet(x, inp_size, hidden_sizes, weights_list,af=tf.nn.sigmoid):
+    def getNet(x, inp_size, hidden_sizes, weights_list,af=tf.nn.sigmoid,name_prefix=""):
         # Encoder Hidden layer with sigmoid activation #1
 
         input = x
         input_size = inp_size
-        for size in hidden_sizes:
-            input = getLayer(input, input_size, size, weights_list, actfun=af)
+        for i, size in enumerate(hidden_sizes):
+            input = getLayer(input, input_size, size, weights_list, actfun=af, name=f"{name_prefix}layer_output_{i}")
             input_size = size
 
         return input
@@ -83,12 +83,12 @@ def getModel(X, inp_size, num_classes=3, nh=[200, 50], lr=0.01, vae_batch=256):
     mdl.target = target
     
     listenc = []
-    mdl.encoder_op = getNet(target, mdl.classification_space_size, mdl.num_hidden, listenc, af=tf.nn.sigmoid)
+    mdl.encoder_op = getNet(target, mdl.classification_space_size, mdl.num_hidden, listenc, af=tf.nn.sigmoid, name_prefix="encoder_")
     
     mdl.enc_smpl = mdl.encoder_op
     
     listdec = []
-    mdl.decoder_op = (getNet(mdl.encoder_op-0.5, mdl.num_hidden[-1], mdl.num_hidden_dec, listdec, af=tf.nn.sigmoid))
+    mdl.decoder_op = (getNet(mdl.encoder_op-0.5, mdl.num_hidden[-1], mdl.num_hidden_dec, listdec, af=tf.nn.sigmoid, name_prefix="decoder_"))
     
     inputs = mdl.target
     restored = mdl.decoder_op
